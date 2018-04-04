@@ -116,7 +116,20 @@ const plugin = {
         console.log(' > Add Instance Hook ... ')
       }
 
-      this.self().on('afterWhere', ((records, entity) => searchProcess.call(this, {records: records, entity: entity, term: term, options: instanceOptions})), true)
+      const hook = this.self().on('afterWhere', ((records, entity) => {
+        this.self().off(hook)
+
+        // temp code, i want to get a relation objects
+        this.get().forEach(r => {
+          const idx = records.findIndex(o => o.id == r.id)
+          this.load.forEach(relationship => {
+            const relatedModel = this.getModel(relationship.name)
+            records[idx][relatedModel] = []
+          })
+        })
+
+        searchProcess.call(this, {records: records, entity: entity, term: term, options: instanceOptions})
+      }), true)
 
       if (pluginOptions.debug || process.env.ENVIRONMENT === 'testing' || singleOptions.debug) {
         console.log(' > Hook added OK')
